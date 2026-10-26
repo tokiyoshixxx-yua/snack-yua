@@ -1,0 +1,18 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>会員証URL発行</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>body{background:#0b090b;color:#f6ecd6;font-family:sans-serif;max-width:700px;margin:auto;padding:20px}button{padding:10px 14px;margin:5px;background:#d8b45f;border:0;border-radius:9px;font-weight:bold}.m{border-bottom:1px solid #554426;padding:14px 0}a{color:#e6c36f}</style></head>
+<body><h1>会員証URL発行</h1><p id="msg">確認中…</p><div id="list"></div>
+<script>
+const sb=supabase.createClient("https://obargoiehxdryqrfxdvw.supabase.co","sb_publishable_B63A2sDLIdK3CXCQLRL0VQ_Ob0VCHSN");
+const base=location.href.replace(/card-links\.html.*$/,'member.html?card=');
+async function start(){
+ const {data:ses}=await sb.auth.getSession();
+ if(!ses.session){document.getElementById('msg').innerHTML='先に <a href="admin-v3.html">店舗管理 v3</a> でログインしてください。';return}
+ const {data,error}=await sb.from('members').select('member_no,name,card_token').order('member_no');
+ if(error){document.getElementById('msg').textContent='エラー: '+error.message;return}
+ document.getElementById('msg').textContent='お客様ごとの専用URLです。';
+ document.getElementById('list').innerHTML=data.map(m=>`<div class="m"><b>#${m.member_no} ${m.name}</b><br><button onclick="copyUrl('${m.card_token}')">会員証URLをコピー</button> <a href="${base+m.card_token}" target="_blank">会員証を開く</a></div>`).join('');
+}
+async function copyUrl(t){const u=base+t;try{await navigator.clipboard.writeText(u);alert('コピーしました')}catch(e){prompt('このURLをコピーしてください',u)}}
+start();
+</script></body></html>

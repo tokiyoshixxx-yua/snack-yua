@@ -1,5 +1,15 @@
 <!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Snack ゆあ 店舗管理 v3</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+function memberCardUrl(token){
+  return location.origin + location.pathname.replace(/[^/]+$/, '') + 'member.html?card=' + encodeURIComponent(token);
+}
+async function copyMemberCard(token){
+  const url = memberCardUrl(token);
+  try { await navigator.clipboard.writeText(url); alert('お客様用の会員証URLをコピーしました'); }
+  catch(e) { prompt('このURLをお客様に送ってください', url); }
+}
+
+</script>
 <style>*{box-sizing:border-box}body{margin:0;background:#0b090b;color:#f6ecd6;font-family:system-ui,"Yu Gothic",sans-serif}.wrap{max-width:720px;margin:auto;padding:24px 16px 60px}h1{text-align:center;color:#e3c172}.panel{background:#171117;border:1px solid #70572c;border-radius:18px;padding:18px;margin:16px 0}input,button{width:100%;padding:14px;margin:6px 0;border-radius:12px;border:1px solid #80652f;font-size:16px}input{background:#0e0b0e;color:#fff}button{background:linear-gradient(135deg,#b98a36,#f0d58a);color:#1b1208;font-weight:800}.sub{background:#2a222a;color:#eee}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}.member{padding:15px 0;border-bottom:1px solid #403521}.big{font-size:26px;color:#e5c374;font-weight:800}.msg{color:#e5c374;min-height:22px}</style></head>
 <body><div class="wrap"><h1>Snack ゆあ<br><small>店舗管理 v3</small></h1>
 <section id="loginPanel" class="panel"><h2>管理者ログイン</h2><input id="emailInput" type="email" placeholder="メールアドレス"><input id="passwordInput" type="password" placeholder="パスワード"><button id="loginButton" type="button">ログイン</button><div id="statusMessage" class="msg">準備OK（v3）</div></section>
