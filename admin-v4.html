@@ -70,7 +70,7 @@ function render(){
 async function addMember(){
  const name=$('newname').value.trim();if(!name)return $('addmsg').textContent='お名前を入力してください。';
  $('addmsg').textContent='登録中…';
- const {data,error}=await sb.from('members').insert({name}).select().single();
+ const {data,error}=await sb.rpc('create_member_reuse_number',{p_name:name});
  if(error)return $('addmsg').textContent='登録エラー: '+error.message;
  $('addmsg').textContent=`登録しました（会員番号 #${data.member_no}）。下のQRをお客様に読み取ってもらってください。`;
  $('newname').value='';
