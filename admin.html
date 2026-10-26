@@ -10,4 +10,3 @@ async function addMember(){let name=newname.value.trim();if(!name)return;let r=a
 async function setVisits(id,v){if(v>15){alert('15回来店に達しています');return}let r=await client.from('members').update({visits:v}).eq('id',id);if(r.error)alert(r.error.message);else loadMembers()}
 async function reward(id,k,v){let r=await client.from('members').update({[k]:v}).eq('id',id);if(r.error)alert(r.error.message);else loadMembers()}
 showApp();</script></body></html>
-<!-- pages-deploy-trigger-2026-10-26 -->
