@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Snack ゆあ 店舗管理 v4</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0b090b;color:#f6ecd6;font-family:"Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif}
+.wrap{max-width:760px;margin:auto;padding:24px 15px 60px}h1{text-align:center;color:#e0bd6d}
+.panel{background:#171117;border:1px solid #765c2d;border-radius:18px;padding:17px;margin:15px 0}
+input,button{width:100%;padding:13px;margin:6px 0;border-radius:11px;border:1px solid #80652f;font-size:16px}
+input{background:#0e0b0e;color:#fff}button{background:linear-gradient(135deg,#b98a36,#f0d58a);color:#1b1208;font-weight:800;cursor:pointer}
+.secondary{background:#282128;color:#eee}.danger{background:#632525;color:#fff;border-color:#9a4a4a}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:7px}.member{padding:15px 0;border-bottom:1px solid #493b24}
+.big{font-size:25px;color:#e5c374;font-weight:800}.msg{min-height:22px;color:#e8c878}
+.qrwrap{display:none;background:#fff;padding:14px;width:max-content;max-width:100%;margin:10px auto;border-radius:12px}
+.small{font-size:13px;color:#b9aa8d;text-align:center}
+#app{display:none}
+</style></head>
+<body><div class="wrap">
+<h1>Snack ゆあ<br><small>店舗管理 v4</small></h1>
+<div id="loginPanel" class="panel">
+<h2>管理者ログイン</h2>
+<input id="email" type="email" placeholder="管理者メールアドレス">
+<input id="password" type="password" placeholder="パスワード">
+<button id="loginBtn">ログイン</button><div id="loginmsg" class="msg">準備OK（v4）</div>
+</div>
+
+<div id="app">
+<div class="panel"><div class="row"><button id="reloadBtn" class="secondary">会員一覧を更新</button><button id="logoutBtn" class="secondary">ログアウト</button></div></div>
+<div class="panel">
+<h2>新規会員登録</h2><input id="newname" placeholder="お名前"><button id="addBtn">会員を登録してQRを表示</button>
+<div id="addmsg" class="msg"></div><div id="newqr" class="qrwrap"></div>
+<div id="newurl" class="small"></div>
+</div>
+<div class="panel"><h2>会員一覧</h2><input id="search" placeholder="名前・会員番号で検索"><div id="members"></div></div>
+</div></div>
+
+<script>
+const sb=supabase.createClient("https://obargoiehxdryqrfxdvw.supabase.co","sb_publishable_B63A2sDLIdK3CXCQLRL0VQ_Ob0VCHSN");
+let members=[];
+const base=location.href.replace(/admin-v4\.html.*$/,'member.html?card=');
+const $=id=>document.getElementById(id);
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function showApp(){$('loginPanel').style.display='none';$('app').style.display='block'}
+async function login(){
+ $('loginmsg').textContent='ログイン確認中…';
+ const {data,error}=await sb.auth.signInWithPassword({email:$('email').value.trim(),password:$('password').value});
+ if(error) return $('loginmsg').textContent='ログインできません: '+error.message;
+ showApp(); await load();
+}
+async function logout(){await sb.auth.signOut();location.reload()}
+async function load(){
+ const {data,error}=await sb.from('members').select('*').order('member_no');
+ if(error)return $('members').textContent='読み込みエラー: '+error.message;
+ members=data||[];render();
+}
+function render(){
+ const q=$('search').value.trim().toLowerCase();
+ const a=members.filter(m=>!q||String(m.member_no).includes(q)||String(m.name).toLowerCase().includes(q));
+ $('members').innerHTML=a.map(m=>`<div class="member">
+ <b>#${m.member_no} ${esc(m.name)}</b><div class="big">${m.visits} / 15回来店</div>
+ <div class="row"><button onclick="plus('${m.id}',${m.visits})">＋1 来店</button><button class="secondary" onclick="minus('${m.id}',${m.visits})">−1 訂正</button></div>
+ <div class="row"><button class="secondary" onclick="reward('${m.id}','reward_5_used',${!m.reward_5_used})">5回特典 ${m.reward_5_used?'✓使用済':'使用'}</button><button class="secondary" onclick="reward('${m.id}','reward_10_used',${!m.reward_10_used})">10回特典 ${m.reward_10_used?'✓使用済':'使用'}</button></div>
+ <button class="secondary" onclick="reward('${m.id}','reward_15_used',${!m.reward_15_used})">15回 吉四六 ${m.reward_15_used?'✓使用済':'使用'}</button>
+ <div class="row"><button class="secondary" onclick="showExistingQR('${m.card_token}','qr-${m.member_no}')">会員証QR</button><button class="danger" onclick="deleteMember('${m.id}','${esc(m.name).replace("'","&#39;")}')">会員を削除</button></div>
+ <div id="qr-${m.member_no}" class="qrwrap"></div>
+ </div>`).join('')||'<div class="small">会員がいません</div>';
+}
+async function addMember(){
+ const name=$('newname').value.trim();if(!name)return $('addmsg').textContent='お名前を入力してください。';
+ $('addmsg').textContent='登録中…';
+ const {data,error}=await sb.from('members').insert({name}).select().single();
+ if(error)return $('addmsg').textContent='登録エラー: '+error.message;
+ $('addmsg').textContent=`登録しました（会員番号 #${data.member_no}）。下のQRをお客様に読み取ってもらってください。`;
+ $('newname').value='';
+ const box=$('newqr');box.innerHTML='';box.style.display='block';
+ new QRCode(box,{text:base+data.card_token,width:220,height:220,correctLevel:QRCode.CorrectLevel.M});
+ $('newurl').innerHTML=`<button class="secondary" onclick="copyUrl('${data.card_token}')">会員証URLをコピー</button>`;
+ await load();
+}
+function showExistingQR(token,id){
+ const box=$(id);
+ if(box.dataset.done!=='1'){box.innerHTML='';new QRCode(box,{text:base+token,width:210,height:210,correctLevel:QRCode.CorrectLevel.M});box.dataset.done='1'}
+ box.style.display=box.style.display==='block'?'none':'block';
+}
+async function copyUrl(token){const u=base+token;try{await navigator.clipboard.writeText(u);alert('会員証URLをコピーしました')}catch(e){prompt('このURLをコピーしてください',u)}}
+async function update(id,changes){const {error}=await sb.from('members').update(changes).eq('id',id);if(error)alert('更新エラー: '+error.message);else await load()}
+async function plus(id,v){if(v>=15)return alert('15回来店に達しています。');await update(id,{visits:v+1})}
+async function minus(id,v){if(v>0&&confirm('来店回数を1つ戻しますか？'))await update(id,{visits:v-1})}
+async function reward(id,key,value){await update(id,{[key]:value})}
+async function deleteMember(id,name){
+ if(!confirm(name+' さんを削除しますか？\n来店回数・特典状況・会員証もすべて無効になります。'))return;
+ if(!confirm('本当に削除しますか？ この操作は元に戻せません。'))return;
+ const {error}=await sb.from('members').delete().eq('id',id);
+ if(error)alert('削除エラー: '+error.message);else await load();
+}
+$('loginBtn').onclick=login;$('logoutBtn').onclick=logout;$('reloadBtn').onclick=load;$('addBtn').onclick=addMember;$('search').oninput=render;
+(async()=>{const {data}=await sb.auth.getSession();if(data.session){showApp();await load()}})();
+</script></body></html>
