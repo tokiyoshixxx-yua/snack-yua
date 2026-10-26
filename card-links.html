@@ -1,18 +1,57 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>会員証URL発行</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>body{background:#0b090b;color:#f6ecd6;font-family:sans-serif;max-width:700px;margin:auto;padding:20px}button{padding:10px 14px;margin:5px;background:#d8b45f;border:0;border-radius:9px;font-weight:bold}.m{border-bottom:1px solid #554426;padding:14px 0}a{color:#e6c36f}</style></head>
-<body><h1>会員証URL発行</h1><p id="msg">確認中…</p><div id="list"></div>
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Snack ゆあ 会員証QR</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box}body{background:#0b090b;color:#f6ecd6;font-family:"Yu Gothic","Hiragino Kaku Gothic ProN",sans-serif;max-width:760px;margin:auto;padding:20px}
+h1{color:#e2bd67;text-align:center}a{color:#e6c36f}button{padding:11px 14px;margin:5px;background:#d8b45f;border:0;border-radius:10px;font-weight:bold;cursor:pointer}
+.m{border:1px solid #5c4827;border-radius:16px;padding:15px;margin:12px 0;background:#151015}
+.qrbox{display:none;background:#fff;padding:14px;width:max-content;margin:12px auto;border-radius:12px}
+.actions{display:flex;flex-wrap:wrap;gap:5px;justify-content:center}.name{font-size:19px;font-weight:bold}.msg{text-align:center;color:#cdbd9a}
+.tip{font-size:13px;color:#b7aa90;text-align:center;margin:12px 0}
+</style></head>
+<body>
+<h1>Snack ゆあ<br>会員証QR</h1>
+<p id="msg" class="msg">確認中…</p><div id="list"></div>
 <script>
 const sb=supabase.createClient("https://obargoiehxdryqrfxdvw.supabase.co","sb_publishable_B63A2sDLIdK3CXCQLRL0VQ_Ob0VCHSN");
 const base=location.href.replace(/card-links\.html.*$/,'member.html?card=');
+
 async function start(){
  const {data:ses}=await sb.auth.getSession();
- if(!ses.session){document.getElementById('msg').innerHTML='先に <a href="admin-v3.html">店舗管理 v3</a> でログインしてください。';return}
+ if(!ses.session){
+   document.getElementById('msg').innerHTML='先に <a href="admin-v3.html">店舗管理 v3</a> でログインしてください。';
+   return;
+ }
  const {data,error}=await sb.from('members').select('member_no,name,card_token').order('member_no');
  if(error){document.getElementById('msg').textContent='エラー: '+error.message;return}
- document.getElementById('msg').textContent='お客様ごとの専用URLです。';
- document.getElementById('list').innerHTML=data.map(m=>`<div class="m"><b>#${m.member_no} ${m.name}</b><br><button onclick="copyUrl('${m.card_token}')">会員証URLをコピー</button> <a href="${base+m.card_token}" target="_blank">会員証を開く</a></div>`).join('');
+ document.getElementById('msg').textContent='お客様の名前を選んで「QRを表示」を押してください。';
+ document.getElementById('list').innerHTML=data.map(m=>`
+ <div class="m">
+   <div class="name">#${m.member_no} ${escapeHtml(m.name)}</div>
+   <div class="actions">
+     <button onclick="showQR('${m.card_token}','qr-${m.member_no}')">QRを表示</button>
+     <button onclick="copyUrl('${m.card_token}')">URLをコピー</button>
+     <button onclick="window.open('${base+m.card_token}','_blank')">会員証を開く</button>
+   </div>
+   <div id="qr-${m.member_no}" class="qrbox"></div>
+   <div class="tip">お客様のスマホでこのQRを読み取ると、その方専用の会員証が開きます。</div>
+ </div>`).join('');
 }
-async function copyUrl(t){const u=base+t;try{await navigator.clipboard.writeText(u);alert('コピーしました')}catch(e){prompt('このURLをコピーしてください',u)}}
+function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function showQR(token,id){
+ const box=document.getElementById(id);
+ const url=base+token;
+ if(box.dataset.done!=='1'){new QRCode(box,{text:url,width:210,height:210,correctLevel:QRCode.CorrectLevel.M});box.dataset.done='1'}
+ box.style.display=box.style.display==='block'?'none':'block';
+}
+async function copyUrl(t){
+ const u=base+t;
+ try{await navigator.clipboard.writeText(u);alert('会員証URLをコピーしました')}
+ catch(e){prompt('このURLをコピーしてください',u)}
+}
 start();
 </script></body></html>
