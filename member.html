@@ -17,19 +17,20 @@
 </style></head>
 <body><div class="card">
 <div class="brand">Snack ゆあ</div><div class="sub">MEMBER'S CARD</div>
-<div id="name" class="name">読み込み中…</div><div id="count" class="count">— / 15回来店</div>
+<div id="name" class="name">読み込み中…</div><div id="count" class="count">— / 20回来店</div>
 <div id="stamps" class="stamps"></div>
 <div class="rewards">
 <div id="r5"><b>5回来店</b>　¥500 OFF</div>
 <div id="r10"><b>10回来店</b>　¥1,000 OFF</div>
-<div id="r15"><b>15回来店</b>　吉四六ボトル1本プレゼント</div>
+<div id="r15"><b>15回来店</b>　¥1,500 OFF</div>
+<div id="r20"><b>20回来店</b>　二階堂プレゼント</div>
 </div><div id="status" class="status">店舗で来店回数を更新すると、このカードにも反映されます。</div><div style="text-align:center;margin-top:14px;font-size:13px;color:#a99c85;line-height:1.7">このページをスマホの「ホーム画面に追加」しておくと、次回からすぐ会員証を開けます。</div>
 </div>
 <script>
 const sb=supabase.createClient("https://obargoiehxdryqrfxdvw.supabase.co","sb_publishable_B63A2sDLIdK3CXCQLRL0VQ_Ob0VCHSN");
 const token=new URLSearchParams(location.search).get("card");
 const stamps=document.getElementById("stamps");
-for(let i=1;i<=15;i++) stamps.insertAdjacentHTML("beforeend",`<div class="stamp" id="s${i}">${i}</div>`);
+for(let i=1;i<=20;i++) stamps.insertAdjacentHTML("beforeend",`<div class="stamp" id="s${i}">${i}</div>`);
 async function load(){
  if(!token){document.getElementById("name").textContent="会員証URLが正しくありません";return}
  const {data,error}=await sb.rpc("get_member_card",{p_token:token});
@@ -37,11 +38,12 @@ async function load(){
  const m=Array.isArray(data)?data[0]:data;
  if(!m){document.getElementById("name").textContent="会員証が見つかりません";return}
  document.getElementById("name").textContent=(m.name||"会員")+" 様";
- document.getElementById("count").textContent=`${m.visits} / 15回来店`;
- for(let i=1;i<=15;i++) document.getElementById("s"+i).classList.toggle("on",i<=m.visits);
+ document.getElementById("count").textContent=`${m.visits} / 20回来店`;
+ for(let i=1;i<=20;i++) document.getElementById("s"+i).classList.toggle("on",i<=m.visits);
  if(m.reward_5_used)document.getElementById("r5").classList.add("used");
  if(m.reward_10_used)document.getElementById("r10").classList.add("used");
  if(m.reward_15_used)document.getElementById("r15").classList.add("used");
+ if(m.reward_20_used)document.getElementById("r20").classList.add("used");
 }
 load();
 </script></body></html>
