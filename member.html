@@ -43,6 +43,7 @@ async function load(){
  if(m.reward_5_used)document.getElementById("r5").classList.add("used");
  if(m.reward_10_used)document.getElementById("r10").classList.add("used");
  if(m.reward_15_used)document.getElementById("r15").classList.add("used");
+ document.getElementById("r20").innerHTML = Number(m.member_no)===2 ? '<b>20回来店</b>　二階堂＋テキーラショット1杯プレゼント' : '<b>20回来店</b>　二階堂プレゼント';
  if(m.reward_20_used)document.getElementById("r20").classList.add("used");
 }
 load();
