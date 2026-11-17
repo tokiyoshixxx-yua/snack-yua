@@ -1,1 +1,12 @@
-const CACHE='yua-sales-v95-shared-seats-20261111';const ASSETS=['./','./index.html','./manifest.webmanifest','./icon-192.png','./icon-512.png'];self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)));self.skipWaiting()});self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.startsWith('yua-sales-')&&k!==CACHE).map(k=>caches.delete(k)))));self.clients.claim()});self.addEventListener('fetch',e=>{const req=e.request;if(req.method!=='GET'||new URL(req.url).origin!==self.location.origin)return;e.respondWith(fetch(req).then(res=>{if(res.ok&&new URL(req.url).pathname.endsWith('/index.html')){const clone=res.clone();caches.open(CACHE).then(c=>c.put(req,clone))}return res}).catch(()=>caches.match(req)))})
+/* スナックゆあ公式サイト：以前の売上アプリ用 Service Worker を安全に終了。
+   オフラインキャッシュ・会員情報・別リポジトリのデータは削除しません。 */
+self.addEventListener('install', function () {
+  self.skipWaiting();
+});
+self.addEventListener('activate', function (event) {
+  event.waitUntil((async function () {
+    await self.clients.claim();
+    await self.registration.unregister();
+  })());
+});
+/* fetch handler intentionally omitted: website requests always go to the network. */
